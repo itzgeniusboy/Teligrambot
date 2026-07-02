@@ -1,33 +1,37 @@
+import os
+import telebot
 import requests
-import time
 
-def check_website(url):
-    # रिक्वेस्ट में Professional User-Agent डालना बेहतर होता है ताकि साइट बॉट को ब्लॉक न करे
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
-    
-    print(f"🔄 Checking status for: {url}...\n" + "-"*40)
-    
+# 🔑 आपका BotFather वाला लाइव टोकन यहाँ डाल दिया है
+BOT_TOKEN = "8986791054:AAE9c01R4YHqXIgDlJQDxbnJm19vS7aNq3A"
+bot = telebot.TeleBot(BOT_TOKEN)
+
+# 🎯 जिस वेबसाइट को चेक करना है उसका URL यहाँ डालो
+TARGET_URL = "https://your-site-link.com" 
+
+def get_site_status(url):
+    headers = {'User-Agent': 'Mozilla/5.0'}
     try:
-        # 10 सेकंड का टाइमआउट रखा है ताकि अगर साइट स्लो हो तो स्क्रिप्ट अटकी न रहे
         response = requests.get(url, headers=headers, timeout=10)
-        
-        # 200 OK का मतलब साइट बिल्कुल सही काम कर रही है
         if response.status_code == 200:
-            print(f"✅ SUCCESS: Site is UP and Running! (Status: {response.status_code})")
+            return f"✅ SITE IS LIVE: Status {response.status_code}"
         else:
-            print(f"⚠️ WARNING: Site responded with Status Code: {response.status_code}")
-            
-    except requests.exceptions.ConnectionError:
-        print("❌ ERROR: Unable to connect. Site is completely DOWN or URL is invalid.")
-    except requests.exceptions.Timeout:
-        print("❌ ERROR: Request Timed Out. Site is taking too long to respond.")
-    except requests.exceptions.RequestException as e:
-        print(f"❌ ERROR: Something went wrong: {e}")
+            return f"⚠️ SITE ERROR: Status {response.status_code}"
+    except Exception as e:
+        return f"❌ SITE DOWN: {e}"
+
+# 🤖 /start कमांड का रिप्लाई
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, "🔥 Engine Active! Your multi-bot setup is working perfectly.\nUse /check to verify site status.")
+
+# 🔄 /check कमांड का रिप्लाई
+@bot.message_handler(commands=['check'])
+def check_status(message):
+    bot.reply_to(message, "🔄 Checking site status...")
+    report = get_site_status(TARGET_URL)
+    bot.reply_to(message, report)
 
 if __name__ == "__main__":
-    # 🎯 यहाँ अपनी साइट का URL डालो (e.g., "https://example.com" या आपकी Vercel/Koyeb की लाइव लिंक)
-    TARGET_URL = "https://multi-bot-hosting-platform.vercel.app/" 
-    
-    check_website(TARGET_URL)
+    print("🚀 Polling started...")
+    bot.infinity_polling()
